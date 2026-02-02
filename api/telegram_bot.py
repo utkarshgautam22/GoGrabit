@@ -7,24 +7,33 @@ Set these environment variables:
 """
 
 import os
-import asyncio
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.error import TelegramError
+import httpx
+from urllib.parse import quote
 
 
 # Get configuration from environment
 BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID', '')
 
-# Initialize bot
-bot = None
-if BOT_TOKEN:
-    bot = Bot(token=BOT_TOKEN)
+
+def _send_telegram_request(method, data):
+    """Send synchronous request to Telegram API"""
+    if not BOT_TOKEN:
+        return None
+    
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/{method}"
+    try:
+        response = httpx.post(url, json=data, timeout=10.0)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"Telegram error: {e}")
+        return None
 
 
 def send_order_notification(order):
     """Send new order notification with action button"""
-    if not bot or not CHAT_ID:
+    if not BOT_TOKEN or not CHAT_ID:
         print("Telegram bot not configured")
         return
     
@@ -51,39 +60,34 @@ def send_order_notification(order):
 """
         
         # Create inline keyboard with "Mark as Picked" button
-        keyboard = [
-            [InlineKeyboardButton("✅ Mark as Picked", callback_data=f"pick_{order.order_id}")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        inline_keyboard = {
+            "inline_keyboard": [
+                [{"text": "✅ Mark as Picked", "callback_data": f"pick_{order.order_id}"}]
+            ]
+        }
         
-        # Send message asynchronously
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        message_obj = loop.run_until_complete(
-            bot.send_message(
-                chat_id=CHAT_ID,
-                text=message,
-                parse_mode='HTML',
-                reply_markup=reply_markup
-            )
-        )
-        loop.close()
+        data = {
+            "chat_id": CHAT_ID,
+            "text": message,
+            "parse_mode": "HTML",
+            "reply_markup": inline_keyboard
+        }
         
-        # Store message ID for later editing
-        order.telegram_message_id = message_obj.message_id
-        order.save()
+        result = _send_telegram_request("sendMessage", data)
         
-        print(f"Telegram notification sent for order {order.order_id}")
+        if result and result.get('ok'):
+            # Store message ID for later editing
+            order.telegram_message_id = result['result']['message_id']
+            order.save()
+            print(f"Telegram notification sent for order {order.order_id}")
         
-    except TelegramError as e:
-        print(f"Telegram error: {e}")
     except Exception as e:
         print(f"Error sending Telegram notification: {e}")
 
 
 def send_order_picked_notification(order):
     """Send notification when order is picked"""
-    if not bot or not CHAT_ID:
+    if not BOT_TOKEN or not CHAT_ID:
         return
     
     try:
@@ -97,17 +101,13 @@ def send_order_picked_notification(order):
 Status: <b>PICKED - Ready for payment</b>
 """
         
-        # Send new message
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            bot.send_message(
-                chat_id=CHAT_ID,
-                text=message,
-                parse_mode='HTML'
-            )
-        )
-        loop.close()
+        data = {
+            "chat_id": CHAT_ID,
+            "text": message,
+            "parse_mode": "HTML"
+        }
+        
+        _send_telegram_request("sendMessage", data)
         
         # Edit original message if exists
         if order.telegram_message_id:
@@ -119,44 +119,39 @@ Status: <b>PICKED - Ready for payment</b>
 
 def answer_callback_query(callback_query_id, text):
     """Answer callback query from button press"""
-    if not bot:
+    if not BOT_TOKEN:
         return
     
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            bot.answer_callback_query(callback_query_id=callback_query_id, text=text)
-        )
-        loop.close()
+        data = {
+            "callback_query_id": callback_query_id,
+            "text": text
+        }
+        _send_telegram_request("answerCallbackQuery", data)
     except Exception as e:
         print(f"Error answering callback: {e}")
 
 
 def edit_message(chat_id, message_id, text):
     """Edit existing message"""
-    if not bot:
+    if not BOT_TOKEN:
         return
     
     try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            bot.edit_message_text(
-                chat_id=chat_id,
-                message_id=message_id,
-                text=text,
-                parse_mode='HTML'
-            )
-        )
-        loop.close()
+        data = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+            "parse_mode": "HTML"
+        }
+        _send_telegram_request("editMessageText", data)
     except Exception as e:
         print(f"Error editing message: {e}")
 
 
 def send_low_stock_alert(product):
     """Send low stock alert"""
-    if not bot or not CHAT_ID:
+    if not BOT_TOKEN or not CHAT_ID:
         return
     
     try:
@@ -170,16 +165,13 @@ Current Stock: <b>{product.stock}</b>
 Please restock soon!
 """
         
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            bot.send_message(
-                chat_id=CHAT_ID,
-                text=message,
-                parse_mode='HTML'
-            )
-        )
-        loop.close()
+        data = {
+            "chat_id": CHAT_ID,
+            "text": message,
+            "parse_mode": "HTML"
+        }
+        
+        _send_telegram_request("sendMessage", data)
         
     except Exception as e:
         print(f"Error sending stock alert: {e}")
