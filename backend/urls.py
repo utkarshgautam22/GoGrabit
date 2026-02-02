@@ -29,10 +29,12 @@ urlpatterns = [
     path('admin.html', TemplateView.as_view(template_name='admin.html'), name='admin-panel'),
 ]
 
-# Serve static files in development
+# Serve static files (CSS, JS) from root for both dev and production
+urlpatterns += [
+    re_path(r'^(?P<path>.*\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf))$', 
+            serve, {'document_root': settings.BASE_DIR / 'frontend'}),
+]
+
+# Serve media files in development
 if settings.DEBUG:
-    urlpatterns += [
-        re_path(r'^(?P<path>.*\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf))$', 
-                serve, {'document_root': settings.BASE_DIR / 'frontend'}),
-    ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
