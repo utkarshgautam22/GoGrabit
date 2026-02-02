@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ff5a3c" />
+
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>GoGrabit — Mobile UI</title>
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo-mark">GG</div>
+        <div class="brand-text">
+          <div class="title">GoGrabit</div>
+          <div class="tag">Reserve • Pick • Go</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="cart-btn" id="topCartBtn">Cart <span class="cart-count" id="topCartCount">0</span></button>
+        <button id="profileBtn"
+          style="background:rgba(255,255,255,0.15);border:none;border-radius:999px;width:36px;height:36px;font-weight:900;cursor:pointer">👤</button>
+        <button id="themeToggle"
+          style="background:rgba(255,255,255,0.15);border:none;border-radius:999px;width:36px;height:36px;font-weight:900;cursor:pointer">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Search -->
+    <div class="search-row">
+      <div class="search">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" style="margin-right:8px">
+          <path d="M21 21l-4.35-4.35" stroke="#889" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#889" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <input id="searchInput" placeholder="Search for snacks, stationery..." />
+      </div>
+    </div>
+
+    <!-- Offers carousel -->
+    <div class="offers">
+      <div class="offer-track" id="offerTrack">
+        <!-- JS will populate offers as full-width slides -->
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="cats" id="categories"></div>
+
+    <!-- Products grid -->
+    <div class="products" id="products"></div>
+  </main>
+
+  <!-- Reservation banner shown after confirm -->
+  <div id="reservationBanner" class="reservation-banner"
+    style="display:none;position:fixed;bottom:0;left:0;right:0;background:#10b981;color:white;padding:16px;box-shadow:0 -4px 12px rgba(0,0,0,0.15);z-index:999;border-top:3px solid #059669">
+    <div style="max-width:980px;margin:0 auto;display:flex;align-items:center;gap:16px;justify-content:space-between">
+      <div>
+        <div style="font-weight:bold;font-size:16px">✓ Order <span id="bannerOrderId"
+            style="font-family:monospace;letter-spacing:1px">--</span></div>
+        <div style="font-size:13px;opacity:0.9;margin-top:4px">Time left: <span id="bannerTimer"
+            style="font-weight:bold">--:--</span></div>
+      </div>
+      <button id="viewReservationBtn" class="pop-btn" style="background:white;color:#10b981;font-weight:bold">View
+        Order</button>
+    </div>
+  </div>
+  <!-- Bottom popbar -->
+  <div class="popbar" id="popbar" aria-hidden="false">
+    <div class="pop-inner">
+      <div>
+        <div style="font-weight:900">Items: <span id="popQty">0</span></div>
+        <div class="pop-info small-muted">Total: ₹<span id="popTotal">0</span></div>
+      </div>
+      <div style="flex:1"></div>
+      <button class="pop-btn" id="openCart">View Cart</button>
+    </div>
+  </div>
+
+  <!-- Cart page/modal -->
+  <div class="toast-container" id="toastContainer"></div>
+  <!-- Admin modal (hidden by default) -->
+  <div class="cart-page" id="adminPage" style="display:none">
+    <div class="cart-panel" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:900">Admin Panel</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="adminLogout"
+            style="background:transparent;border:none;font-weight:800;cursor:pointer">Logout</button>
+          <button id="closeAdmin"
+            style="background:transparent;border:none;font-weight:800;cursor:pointer">Close</button>
+        </div>
+      </div>
+
+      <div style="margin-top:10px" id="adminAuthArea">
+        <div style="font-weight:700;margin-bottom:8px">Admin Access</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="adminPinInput" placeholder="Enter 4-6 digit PIN"
+            style="padding:10px;border-radius:8px;border:1px solid #eef2f6" />
+          <button id="adminSetBtn" class="pop-btn">Set / Login</button>
+        </div>
+        <div class="small-muted" style="margin-top:8px">PIN is stored locally on this device only. Keep it secret.</div>
+      </div>
+
+      <div id="adminPanelArea" style="display:none;margin-top:12px">
+        <div style="font-weight:900">Analytics (Today)</div>
+        <div id="lowStockAlerts" style="margin:10px 0"></div>
+        <div class="analytics" id="analyticsCards"></div>
+        <div class="top-products" id="topProducts"></div>
+        <div style="font-weight:900">Manage Products</div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <input id="adm_name" placeholder="Name"
+            style="flex:1;padding:8px;border-radius:8px;border:1px solid #eef2f6" />
+          <input id="adm_category" placeholder="Category"
+            style="width:120px;padding:8px;border-radius:8px;border:1px solid #eef2f6" />
+          <input id="adm_price" placeholder="Price"
+            style="width:90px;padding:8px;border-radius:8px;border:1px solid #eef2f6" />
+          <input id="adm_stock" placeholder="Stock"
+            style="width:90px;padding:8px;border-radius:8px;border:1px solid #eef2f6" />
+          <input id="adm_img" type="file" accept="image/*" placeholder="Image"
+            style="width:100px;padding:8px;border-radius:8px;border:1px solid #eef2f6" />
+          <button id="adm_add" class="pop-btn">Add Product</button>
+        </div>
+        <!-- Export buttons -->
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button id="exportCsv" class="pop-btn">Export CSV</button>
+          <button id="exportProductsCsv" class="pop-btn" style="background:#fff;color:#111;border:1px solid #eee">Export
+            Products</button>
+          <button id="exportReservationsCsv" class="pop-btn"
+            style="background:#fff;color:#111;border:1px solid #eee">Export Reservations</button>
+          <button onclick="clearDatabase()" class="pop-btn" style="background:#dc2626;color:white">Clear DB</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:900">Existing Products</div>
+          <div id="adminProductList" style="margin-top:8px"></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="margin-top:12px">
+            <div style="font-weight:900">QR Pickup Verification</div>
+
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <input id="qrVerifyInput" placeholder="Scan / enter Order ID"
+                style="flex:1;padding:10px;border-radius:8px;border:1px solid #eef2f6" />
+              <button id="qrVerifyBtn" class="pop-btn">Verify</button>
+            </div>
+
+            <div id="qrVerifyStatus" class="small-muted" style="margin-top:6px"></div>
+          </div>
+          <div style="font-weight:900;margin-top:12px">Recent Orders</div>
+          <div id="adminRecentOrders" style="margin-top:8px"></div>
+          <div id="adminReservations" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cart-page" id="profilePage" style="display:none">
+    <div class="cart-panel" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:900">My Profile</div>
+        <button id="closeProfile"
+          style="background:transparent;border:none;font-weight:800;cursor:pointer">Close</button>
+      </div>
+
+      <div class="cust-form">
+        <input id="profileName" placeholder="Your name" />
+        <input id="profilePhone" placeholder="Phone number" />
+        <input id="profileRoom" placeholder="Room / Block (B-203)" />
+      </div>
+
+      <button id="saveProfile" class="confirm-btn">Save Profile</button>
+      <div class="small-muted" style="margin-top:6px">
+        Saved locally on this device. You won't need to re-enter details.
+      </div>
+    </div>
+  </div>
+  <div class="cart-page" id="cartPage">
+    <div class="cart-panel" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:900">Your Cart</div>
+        <button id="closeCart" style="background:transparent;border:none;font-weight:800;cursor:pointer">Close</button>
+      </div>
+
+      <div id="cartItems" style="margin-top:8px"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <div style="font-weight:900">Total</div>
+        <div style="font-weight:900">₹<span id="cartTotal">0</span></div>
+      </div>
+
+      <div class="cust-form">
+        <input id="custName" placeholder="Your name" />
+        <input id="custPhone" placeholder="Phone number (10 digits)" />
+        <input id="custRoom" placeholder="Room / Block (e.g. B-203)" />
+      </div>
+
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">
+        Your details will be saved for next time. Items reserved for 15 minutes.
+      </div>
+
+      <button id="confirmReserve" class="confirm-btn">Confirm 15-min Reservation</button>
+
+      <div id="reservationInfo" style="margin-top:10px" class="small-muted"></div>
+
+      <div style="margin-top:14px">
+        <div style="font-weight:900">Recent Orders</div>
+        <div id="userRecentOrders" class="small-muted" style="margin-top:6px">
+          No previous orders
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="successScreen" class="success-screen">
+    <div class="success-card">
+      <div class="success-check">✓</div>
+      <h2>Reservation Confirmed</h2>
+      <div class="small-muted">
+        Show QR at pickup counter
+      </div>
+      <button id="successDone" class="confirm-btn" style="margin-top:16px">
+        Done
+      </button>
+    </div>
+  </div>
+
+  <!-- External JavaScript -->
+  <script src="script.js"></script>
+</body>
+
+</html>
