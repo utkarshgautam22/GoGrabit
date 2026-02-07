@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 import random
 import string
+import base64
+from django.core.files.base import ContentFile
 
 
 class Product(models.Model):
@@ -11,16 +13,16 @@ class Product(models.Model):
     category = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image = models.TextField(blank=True, null=True)  # Store base64 encoded image
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     @property
     def image_url(self):
-        """Return image URL for API compatibility"""
+        """Return base64 data URL for direct use in frontend"""
         if self.image:
-            return self.image.url
+            return self.image
         return None
 
     class Meta:

@@ -10,12 +10,9 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'category', 'price', 'stock', 'image', 'active', 'created_at', 'updated_at']
     
     def get_image(self, obj):
-        """Return full URL for image or None"""
+        """Return base64 data URL directly"""
         if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
+            return obj.image  # Already in data:image format
         return None
 
 
