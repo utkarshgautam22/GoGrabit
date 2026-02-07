@@ -10,7 +10,7 @@ h11==0.14.0
 httpcore==1.0.7
 httpx==0.28.1
 idna==3.10
-pillow==11.0.0
+pillow==12.1.0
 psycopg2-binary==2.9.10
 python-telegram-bot==21.9
 sqlparse==0.5.2
