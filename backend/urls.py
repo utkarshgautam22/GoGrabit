@@ -35,6 +35,5 @@ urlpatterns += [
             serve, {'document_root': settings.BASE_DIR / 'frontend'}),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files (uploaded images) in both dev and production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

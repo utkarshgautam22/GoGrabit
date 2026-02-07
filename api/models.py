@@ -11,10 +11,17 @@ class Product(models.Model):
     category = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
-    image = models.CharField(max_length=500, blank=True, null=True)
+    image = models.ImageField(upload_to='products/', blank=True, null=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    @property
+    def image_url(self):
+        """Return image URL for API compatibility"""
+        if self.image:
+            return self.image.url
+        return None
 
     class Meta:
         ordering = ['name']
